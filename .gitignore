@@ -1,0 +1,11 @@
+node_modules/
+.next/
+out/
+.env
+.env.local
+.env.*.local
+npm-debug.log*
+playwright-report/
+test-results/
+.openai/*.tar.gz
+*.tsbuildinfo

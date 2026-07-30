@@ -1,8 +1,10 @@
-import { cp, rm } from "node:fs/promises";
+import { copyFile, mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
 
-const source = resolve("out");
-const destination = resolve("dist");
+const metadataDirectory = resolve("dist", ".openai");
 
-await rm(destination, { recursive: true, force: true });
-await cp(source, destination, { recursive: true });
+await mkdir(metadataDirectory, { recursive: true });
+await copyFile(
+  resolve(".openai", "hosting.json"),
+  resolve(metadataDirectory, "hosting.json"),
+);

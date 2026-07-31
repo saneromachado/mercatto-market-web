@@ -47,7 +47,7 @@ O teste de ponta a ponta pressupõe:
 Configure:
 
 ```env
-NEXT_PUBLIC_API_URL=https://sua-api.example.com/api
+NEXT_PUBLIC_API_URL=https://market-api-njmw.onrender.com/api
 ```
 
 O backend precisa estar disponível por HTTPS e permitir CORS para o domínio do

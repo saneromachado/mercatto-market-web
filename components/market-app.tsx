@@ -189,7 +189,15 @@ export function MarketApp() {
       const savedUrl = localStorage.getItem("market_api_url");
       const savedToken = localStorage.getItem("market_token");
       const savedUser = localStorage.getItem("market_user");
-      if (savedUrl) marketApi.setBaseUrl(savedUrl);
+      const defaultUrl = marketApi.getBaseUrl();
+      const savedLocalUrl = savedUrl?.includes("localhost") ?? false;
+      const productionDefault = !defaultUrl.includes("localhost");
+
+      if (savedUrl && !(savedLocalUrl && productionDefault)) {
+        marketApi.setBaseUrl(savedUrl);
+      } else if (savedLocalUrl && productionDefault) {
+        localStorage.removeItem("market_api_url");
+      }
       if (savedToken && savedUser) {
         marketApi.setToken(savedToken);
         setToken(savedToken);

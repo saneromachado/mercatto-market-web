@@ -419,7 +419,9 @@ function LoginScreen({
   onLogin: (email: string, password: string, apiUrl: string) => Promise<void>;
 }) {
   const [email, setEmail] = useState("admin@market.local");
-  const [password, setPassword] = useState("admin123");
+  const [password, setPassword] = useState(
+    marketApi.getBaseUrl().includes("localhost") ? "admin123" : "",
+  );
   const [apiUrl, setApiUrl] = useState(marketApi.getBaseUrl());
   const [showSettings, setShowSettings] = useState(false);
   const [loading, setLoading] = useState(false);

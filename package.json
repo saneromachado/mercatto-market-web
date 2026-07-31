@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vinext dev",
     "build": "vinext build && node scripts/prepare-dist.mjs",
+    "build:pages": "next build",
     "start": "vinext start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",

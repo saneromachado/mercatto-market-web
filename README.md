@@ -52,3 +52,10 @@ NEXT_PUBLIC_API_URL=https://market-api-njmw.onrender.com/api
 
 O backend precisa estar disponível por HTTPS e permitir CORS para o domínio do
 frontend.
+
+## GitHub Pages
+
+O workflow `.github/workflows/deploy-pages.yml` gera a exportação estática com
+`NEXT_PUBLIC_API_URL=https://market-api-njmw.onrender.com/api` e publica o site
+em `https://saneromachado.github.io/mercatto-market-web/` após cada push na branch
+`main`.

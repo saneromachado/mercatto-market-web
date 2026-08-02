@@ -249,6 +249,8 @@ export function MarketApp() {
     return <LoginScreen onLogin={handleLogin} />;
   }
 
+  const canWrite = user.role !== "VIEWER";
+
   return (
     <main className="app-shell">
       <Sidebar
@@ -258,6 +260,7 @@ export function MarketApp() {
         onSelect={selectView}
         onClose={() => setMobileMenu(false)}
         onLogout={handleLogout}
+        canWrite={canWrite}
       />
 
       <section className="workspace">
@@ -303,6 +306,7 @@ export function MarketApp() {
               lowStock={lowStock}
               movements={movements}
               onNavigate={selectView}
+              canWrite={canWrite}
             />
           )}
           {view === "products" && (
@@ -310,24 +314,24 @@ export function MarketApp() {
               products={products}
               search={search}
               onSearch={setSearch}
-              onNew={() => setModal("product")}
+              onNew={canWrite ? () => setModal("product") : undefined}
             />
           )}
           {view === "categories" && (
             <CategoriesView
               categories={categories}
               products={products}
-              onNew={() => setModal("category")}
+              onNew={canWrite ? () => setModal("category") : undefined}
             />
           )}
           {view === "inventory" && (
             <InventoryView
               movements={movements}
               lowStock={lowStock}
-              onNew={() => setModal("movement")}
+              onNew={canWrite ? () => setModal("movement") : undefined}
             />
           )}
-          {view === "checkout" && (
+          {view === "checkout" && canWrite && (
             <CheckoutView
               products={products}
               cart={cart}
@@ -342,22 +346,26 @@ export function MarketApp() {
           {view === "sales" && (
             <SalesView
               sales={sales}
-              onCancel={async (sale) => {
-                if (!window.confirm(`Cancelar a venda #${sale.number}?`)) return;
-                try {
-                  await marketApi.cancelSale(sale.id);
-                  notify(`Venda #${sale.number} cancelada.`);
-                  await loadData();
-                } catch (error) {
-                  notify(getErrorMessage(error), "error");
-                }
-              }}
+              onCancel={
+                canWrite
+                  ? async (sale) => {
+                      if (!window.confirm(`Cancelar a venda #${sale.number}?`)) return;
+                      try {
+                        await marketApi.cancelSale(sale.id);
+                        notify(`Venda #${sale.number} cancelada.`);
+                        await loadData();
+                      } catch (error) {
+                        notify(getErrorMessage(error), "error");
+                      }
+                    }
+                  : undefined
+              }
             />
           )}
         </div>
       </section>
 
-      {modal === "product" && (
+      {modal === "product" && canWrite && (
         <ProductModal
           categories={categories}
           onClose={() => setModal(null)}
@@ -369,7 +377,7 @@ export function MarketApp() {
           notify={notify}
         />
       )}
-      {modal === "category" && (
+      {modal === "category" && canWrite && (
         <CategoryModal
           onClose={() => setModal(null)}
           onSaved={async () => {
@@ -380,7 +388,7 @@ export function MarketApp() {
           notify={notify}
         />
       )}
-      {modal === "movement" && (
+      {modal === "movement" && canWrite && (
         <MovementModal
           products={products}
           onClose={() => setModal(null)}
@@ -544,6 +552,7 @@ function Sidebar({
   onSelect,
   onClose,
   onLogout,
+  canWrite,
 }: {
   user: User;
   view: View;
@@ -551,6 +560,7 @@ function Sidebar({
   onSelect: (view: View) => void;
   onClose: () => void;
   onLogout: () => void;
+  canWrite: boolean;
 }) {
   return (
     <>
@@ -567,27 +577,37 @@ function Sidebar({
         </div>
         <p className="nav-label">Operação</p>
         <nav>
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.view}
-                className={view === item.view ? "active" : ""}
-                onClick={() => onSelect(item.view)}
-              >
-                <Icon size={19} />
-                <span>{item.label}</span>
-                {view === item.view && <ChevronRight className="nav-arrow" size={16} />}
-              </button>
-            );
-          })}
+          {navItems
+            .filter((item) => canWrite || item.view !== "checkout")
+            .map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.view}
+                  className={view === item.view ? "active" : ""}
+                  onClick={() => onSelect(item.view)}
+                >
+                  <Icon size={19} />
+                  <span>{item.label}</span>
+                  {view === item.view && (
+                    <ChevronRight className="nav-arrow" size={16} />
+                  )}
+                </button>
+              );
+            })}
         </nav>
         <div className="sidebar-footer">
           <div className="sidebar-user">
             <div className="user-avatar">{initials(user.name)}</div>
             <div>
               <strong>{user.name}</strong>
-              <span>{user.role === "ADMIN" ? "Administrador" : "Operador"}</span>
+              <span>
+                {user.role === "ADMIN"
+                  ? "Administrador"
+                  : user.role === "VIEWER"
+                    ? "Somente consulta"
+                    : "Operador"}
+              </span>
             </div>
           </div>
           <button className="logout-button" onClick={onLogout} title="Sair">
@@ -605,12 +625,14 @@ function Dashboard({
   lowStock,
   movements,
   onNavigate,
+  canWrite,
 }: {
   products: Product[];
   sales: Sale[];
   lowStock: Product[];
   movements: Movement[];
   onNavigate: (view: View) => void;
+  canWrite: boolean;
 }) {
   const activeSales = sales.filter((sale) => sale.status === "COMPLETED");
   const revenue = activeSales.reduce((sum, sale) => sum + Number(sale.total), 0);
@@ -628,9 +650,11 @@ function Dashboard({
             Acompanhe os números principais e resolva o que precisa de atenção.
           </p>
         </div>
-        <button className="light-button" onClick={() => onNavigate("checkout")}>
-          Abrir caixa <ArrowRight size={17} />
-        </button>
+        {canWrite && (
+          <button className="light-button" onClick={() => onNavigate("checkout")}>
+            Abrir caixa <ArrowRight size={17} />
+          </button>
+        )}
         <ShoppingBasket className="welcome-icon" size={142} strokeWidth={1.2} />
       </section>
 
@@ -803,7 +827,7 @@ function ProductsView({
   products: Product[];
   search: string;
   onSearch: (value: string) => void;
-  onNew: () => void;
+  onNew?: () => void;
 }) {
   const filtered = products.filter((product) =>
     [product.name, product.sku, product.barcode]
@@ -818,9 +842,11 @@ function ProductsView({
         onSearch={onSearch}
         placeholder="Buscar por nome, SKU ou código..."
         action={
-          <button className="primary-button" onClick={onNew}>
-            <Plus size={17} /> Novo produto
-          </button>
+          onNew ? (
+            <button className="primary-button" onClick={onNew}>
+              <Plus size={17} /> Novo produto
+            </button>
+          ) : undefined
         }
       />
       <div className="table-wrap">
@@ -889,7 +915,7 @@ function CategoriesView({
 }: {
   categories: Category[];
   products: Product[];
-  onNew: () => void;
+  onNew?: () => void;
 }) {
   return (
     <div className="category-layout">
@@ -900,9 +926,11 @@ function CategoriesView({
             mais facilidade.
           </p>
         </div>
-        <button className="primary-button" onClick={onNew}>
-          <Plus size={17} /> Nova categoria
-        </button>
+        {onNew && (
+          <button className="primary-button" onClick={onNew}>
+            <Plus size={17} /> Nova categoria
+          </button>
+        )}
       </div>
       <div className="category-grid">
         {categories.map((category, index) => {
@@ -945,7 +973,7 @@ function InventoryView({
 }: {
   movements: Movement[];
   lowStock: Product[];
-  onNew: () => void;
+  onNew?: () => void;
 }) {
   return (
     <div className="inventory-layout">
@@ -973,9 +1001,11 @@ function InventoryView({
             <span className="eyebrow">Histórico</span>
             <h2>Movimentações</h2>
           </div>
-          <button className="primary-button" onClick={onNew}>
-            <Plus size={17} /> Nova movimentação
-          </button>
+          {onNew && (
+            <button className="primary-button" onClick={onNew}>
+              <Plus size={17} /> Nova movimentação
+            </button>
+          )}
         </div>
         <div className="table-wrap">
           <table>
@@ -1242,7 +1272,7 @@ function SalesView({
   onCancel,
 }: {
   sales: Sale[];
-  onCancel: (sale: Sale) => Promise<void>;
+  onCancel?: (sale: Sale) => Promise<void>;
 }) {
   const [status, setStatus] = useState<"ALL" | Sale["status"]>("ALL");
   const filtered = sales.filter((sale) => status === "ALL" || sale.status === status);
@@ -1297,7 +1327,7 @@ function SalesView({
                   </span>
                 </td>
                 <td>
-                  {sale.status === "COMPLETED" && (
+                  {sale.status === "COMPLETED" && onCancel && (
                     <button
                       className="row-action"
                       onClick={() => void onCancel(sale)}

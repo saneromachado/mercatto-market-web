@@ -2,7 +2,7 @@ export type User = {
   id: string;
   name: string;
   email: string;
-  role: "ADMIN" | "CASHIER" | "STOCKER";
+  role: "ADMIN" | "CASHIER" | "STOCKER" | "VIEWER";
 };
 
 export type Category = {

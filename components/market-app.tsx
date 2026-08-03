@@ -36,6 +36,7 @@ import {
   ReactNode,
   useCallback,
   useEffect,
+  useId,
   useState,
 } from "react";
 import {
@@ -1700,17 +1701,20 @@ function ModalShell({
   onClose: () => void;
   children: ReactNode;
 }) {
+  const titleId = useId();
+
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
       <section
         className="modal"
         role="dialog"
         aria-modal="true"
+        aria-labelledby={titleId}
         onMouseDown={(event) => event.stopPropagation()}
       >
         <div className="modal-header">
           <div>
-            <h2>{title}</h2>
+            <h2 id={titleId}>{title}</h2>
             <p>{subtitle}</p>
           </div>
           <button className="icon-button" onClick={onClose} aria-label="Fechar">

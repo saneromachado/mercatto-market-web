@@ -17,6 +17,7 @@ import {
   Menu,
   Minus,
   Package,
+  Pencil,
   Plus,
   ReceiptText,
   Search,
@@ -130,6 +131,7 @@ export function MarketApp() {
   const [view, setView] = useState<View>("dashboard");
   const [mobileMenu, setMobileMenu] = useState(false);
   const [modal, setModal] = useState<Modal>(null);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [lowStock, setLowStock] = useState<Product[]>([]);
@@ -321,7 +323,36 @@ export function MarketApp() {
             <CategoriesView
               categories={categories}
               products={products}
-              onNew={canWrite ? () => setModal("category") : undefined}
+              onNew={
+                canWrite
+                  ? () => {
+                      setEditingCategory(null);
+                      setModal("category");
+                    }
+                  : undefined
+              }
+              onEdit={
+                canWrite
+                  ? (category) => {
+                      setEditingCategory(category);
+                      setModal("category");
+                    }
+                  : undefined
+              }
+              onDelete={
+                canWrite
+                  ? async (category) => {
+                      if (!window.confirm(`Excluir a categoria ${category.name}?`)) return;
+                      try {
+                        await marketApi.deleteCategory(category.id);
+                        notify("Categoria desativada.");
+                        await loadData();
+                      } catch (error) {
+                        notify(getErrorMessage(error), "error");
+                      }
+                    }
+                  : undefined
+              }
             />
           )}
           {view === "inventory" && (
@@ -379,10 +410,16 @@ export function MarketApp() {
       )}
       {modal === "category" && canWrite && (
         <CategoryModal
-          onClose={() => setModal(null)}
-          onSaved={async () => {
+          category={editingCategory}
+          onClose={() => {
+            setEditingCategory(null);
             setModal(null);
-            notify("Categoria criada.");
+          }}
+          onSaved={async () => {
+            const wasEditing = editingCategory !== null;
+            setEditingCategory(null);
+            setModal(null);
+            notify(wasEditing ? "Categoria atualizada." : "Categoria criada.");
             await loadData();
           }}
           notify={notify}
@@ -911,10 +948,14 @@ function CategoriesView({
   categories,
   products,
   onNew,
+  onEdit,
+  onDelete,
 }: {
   categories: Category[];
   products: Product[];
   onNew?: () => void;
+  onEdit?: (category: Category) => void;
+  onDelete?: (category: Category) => Promise<void>;
 }) {
   return (
     <div className="category-layout">
@@ -937,7 +978,11 @@ function CategoriesView({
             (product) => product.categoryId === category.id,
           ).length;
           return (
-            <article className={`category-card tone-${(index % 4) + 1}`} key={category.id}>
+            <article
+              className={`category-card tone-${(index % 4) + 1}`}
+              data-testid={`category-card-${category.id}`}
+              key={category.id}
+            >
               <div className="category-icon">
                 <Tags size={22} />
               </div>
@@ -950,6 +995,30 @@ function CategoriesView({
                 <strong>{count}</strong>
                 <span>{count === 1 ? "produto" : "produtos"}</span>
               </div>
+              {(onEdit || onDelete) && (
+                <div className="category-actions">
+                  {onEdit && (
+                    <button
+                      type="button"
+                      className="text-button"
+                      aria-label={`Editar categoria ${category.name}`}
+                      onClick={() => onEdit(category)}
+                    >
+                      <Pencil size={15} /> Editar
+                    </button>
+                  )}
+                  {onDelete && category.active && (
+                    <button
+                      type="button"
+                      className="text-button danger-button"
+                      aria-label={`Excluir categoria ${category.name}`}
+                      onClick={() => void onDelete(category)}
+                    >
+                      <Trash2 size={15} /> Excluir
+                    </button>
+                  )}
+                </div>
+              )}
             </article>
           );
         })}
@@ -1424,10 +1493,12 @@ function ProductModal({
 }
 
 function CategoryModal({
+  category,
   onClose,
   onSaved,
   notify,
 }: {
+  category: Category | null;
   onClose: () => void;
   onSaved: () => Promise<void>;
   notify: (message: string, type?: "success" | "error") => void;
@@ -1438,10 +1509,18 @@ function CategoryModal({
     setSaving(true);
     const data = new FormData(event.currentTarget);
     try {
-      await marketApi.createCategory({
+      const input = {
         name: String(data.get("name")),
-        description: String(data.get("description")) || undefined,
-      });
+        description: String(data.get("description")) || null,
+      };
+      if (category) {
+        await marketApi.updateCategory(category.id, input);
+      } else {
+        await marketApi.createCategory({
+          name: input.name,
+          description: input.description ?? undefined,
+        });
+      }
       await onSaved();
     } catch (error) {
       notify(getErrorMessage(error), "error");
@@ -1451,14 +1530,24 @@ function CategoryModal({
   };
   return (
     <ModalShell
-      title="Nova categoria"
-      subtitle="Crie um grupo para organizar seus produtos."
+      title={category ? "Editar categoria" : "Nova categoria"}
+      subtitle={
+        category
+          ? "Atualize as informações da categoria."
+          : "Crie um grupo para organizar seus produtos."
+      }
       onClose={onClose}
     >
       <form onSubmit={submit} className="modal-form">
         <label className="field full">
           <span>Nome</span>
-          <input name="name" minLength={2} required placeholder="Ex.: Bebidas" />
+          <input
+            name="name"
+            minLength={2}
+            required
+            defaultValue={category?.name ?? ""}
+            placeholder="Ex.: Bebidas"
+          />
         </label>
         <label className="field full">
           <span>Descrição</span>
@@ -1466,10 +1555,15 @@ function CategoryModal({
             name="description"
             maxLength={255}
             rows={4}
+            defaultValue={category?.description ?? ""}
             placeholder="Uma breve descrição da categoria"
           />
         </label>
-        <ModalActions onClose={onClose} saving={saving} label="Criar categoria" />
+        <ModalActions
+          onClose={onClose}
+          saving={saving}
+          label={category ? "Salvar alterações" : "Criar categoria"}
+        />
       </form>
     </ModalShell>
   );

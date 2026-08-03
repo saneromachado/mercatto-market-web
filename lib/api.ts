@@ -172,6 +172,20 @@ export class MarketApi {
     });
   }
 
+  public updateCategory(
+    id: string,
+    input: { name?: string; description?: string | null; active?: boolean },
+  ) {
+    return this.request<Category>(`/categories/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    });
+  }
+
+  public deleteCategory(id: string) {
+    return this.request<Category>(`/categories/${id}`, { method: "DELETE" });
+  }
+
   public lowStock() {
     return this.request<Product[]>("/inventory/low-stock");
   }

@@ -1228,6 +1228,25 @@ tbody tr:hover {
   font-size: 10px;
 }
 
+.category-actions {
+  grid-column: 1 / -1;
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.category-actions .text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.danger-button {
+  color: #a23d32;
+}
+
 .inventory-summary {
   min-height: 150px;
   padding: 24px 28px;

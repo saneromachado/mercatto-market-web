@@ -45,7 +45,7 @@ flowchart LR
 - login com JWT;
 - visão geral da operação;
 - catálogo de produtos;
-- cadastro de categorias;
+- cadastro, edição e desativação de categorias;
 - entradas, saídas e ajustes de estoque;
 - alertas de estoque baixo;
 - frente de caixa;

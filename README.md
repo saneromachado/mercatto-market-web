@@ -59,11 +59,12 @@ flowchart LR
 Abra o site e use:
 
 ```text
-E-mail: admin@market.local
-Senha: valor definido em ADMIN_PASSWORD no Render
+E-mail: consulta@market.local
+Senha: Viewerpassword
 ```
 
-A senha de produção não fica salva no frontend nem no GitHub.
+Essas credenciais são preenchidas automaticamente na tela. O perfil público pode
+visualizar o sistema, mas não pode criar, alterar ou excluir dados.
 
 ## Publicação no GitHub Pages
 
@@ -131,7 +132,7 @@ pode precisar despertar após um período sem uso.
 ### Login retorna `401`
 
 O frontend conseguiu acessar a API, mas as credenciais foram rejeitadas.
-Confirme `admin@market.local` e a senha definida em `ADMIN_PASSWORD` no Render.
+Confirme `consulta@market.local` e a senha pública `Viewerpassword`.
 
 ### GitHub Pages retorna `404`
 

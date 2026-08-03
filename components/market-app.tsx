@@ -426,10 +426,8 @@ function LoginScreen({
 }: {
   onLogin: (email: string, password: string, apiUrl: string) => Promise<void>;
 }) {
-  const [email, setEmail] = useState("admin@market.local");
-  const [password, setPassword] = useState(
-    marketApi.getBaseUrl().includes("localhost") ? "admin123" : "",
-  );
+  const [email, setEmail] = useState("consulta@market.local");
+  const [password, setPassword] = useState("Viewerpassword");
   const [apiUrl, setApiUrl] = useState(marketApi.getBaseUrl());
   const [showSettings, setShowSettings] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -537,7 +535,8 @@ function LoginScreen({
           </button>
 
           <p className="login-hint">
-            Ambiente de estudo: <strong>admin@market.local</strong>
+            Acesso de demonstração: <strong>consulta@market.local</strong> /{" "}
+            <strong>Viewerpassword</strong>
           </p>
         </form>
       </section>
